@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Namjap Attendance</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    label { display: block; margin-top: 10px; }
+    textarea, select, input[type="text"] { width: 100%; padding: 6px; }
+    button { margin-top: 15px; padding: 10px 15px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Namjap Attendance</h2>
+  <form id="attendanceForm">
+    <label>Select Attendees (Master List):</label>
+    <div id="masterList"></div>
+
+    <label>Ad hoc Attendees (comma separated):</label>
+    <textarea id="adhocNames" rows="3" placeholder="e.g., John Doe, Jane Smith"></textarea>
+
+    <button type="submit">Submit Attendance</button>
+  </form>
+  <p id="responseMessage"></p>
+
+  <script>
+    // Load master list dynamically (keep blank or use fake names for now)
+    const masterNames = ["Person A", "Person B", "Person C", "Person D", "Person E"];
+    const container = document.getElementById("masterList");
+    masterNames.forEach(name => {
+      const label = document.createElement("label");
+      label.innerHTML = `<input type="checkbox" name="master" value="${name}"> ${name}`;
+      container.appendChild(label);
+    });
+
+    document.getElementById("attendanceForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const selected = Array.from(document.querySelectorAll("input[name='master']:checked"))
+                            .map(el => el.value);
+      const adhoc = document.getElementById("adhocNames").value;
+
+      const payload = { master: selected, adhoc: adhoc };
+      try {
+        const res = await fetch("YOUR_GOOGLE_APPS_SCRIPT_URL", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await res.text();
+        document.getElementById("responseMessage").innerText = text;
+      } catch (err) {
+        document.getElementById("responseMessage").innerText = "Error submitting form.";
+      }
+    });
+  </script>
+</body>
+</html>
