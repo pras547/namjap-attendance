@@ -1,58 +1,99 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Namjap Attendance</title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    label { display: block; margin-top: 10px; }
-    textarea, select, input[type="text"] { width: 100%; padding: 6px; }
-    button { margin-top: 15px; padding: 10px 15px; font-size: 16px; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin: 5px 0;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      font-size: 16px;
+    }
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <h2>Namjap Attendance</h2>
-  <form id="attendanceForm">
-    <label>Select Attendees (Master List):</label>
-    <div id="masterList"></div>
 
-    <label>Ad hoc Attendees (comma separated):</label>
-    <textarea id="adhocNames" rows="3" placeholder="e.g., John Doe, Jane Smith"></textarea>
+  <form id="attendanceForm">
+    <fieldset>
+      <legend><strong>Select attendees from master list:</strong></legend>
+      <div id="masterList">Loading master list...</div>
+    </fieldset>
+
+    <label for="adhoc"><strong>Ad hoc attendees (comma-separated):</strong></label>
+    <textarea id="adhoc" name="adhoc" placeholder="e.g. John Doe, Jane Smith"></textarea>
 
     <button type="submit">Submit Attendance</button>
+    <div id="status"></div>
   </form>
-  <p id="responseMessage"></p>
 
   <script>
-    // Load master list dynamically (keep blank or use fake names for now)
-    const masterNames = ["Person A", "Person B", "Person C", "Person D", "Person E"];
-    const container = document.getElementById("masterList");
-    masterNames.forEach(name => {
-      const label = document.createElement("label");
-      label.innerHTML = `<input type="checkbox" name="master" value="${name}"> ${name}`;
-      container.appendChild(label);
-    });
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxYIV-ub7AEcpUU34fFqdDEqVlKHDex0Yw_y4CSd0Sn3CusPuoLQZHD5Ysf5zAZtkGA2g/exec";
 
-    document.getElementById("attendanceForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const selected = Array.from(document.querySelectorAll("input[name='master']:checked"))
-                            .map(el => el.value);
-      const adhoc = document.getElementById("adhocNames").value;
-
-      const payload = { master: selected, adhoc: adhoc };
-      try {
-        const res = await fetch("https://script.google.com/macros/s/AKfycbxYIV-ub7AEcpUU34fFqdDEqVlKHDex0Yw_y4CSd0Sn3CusPuoLQZHD5Ysf5zAZtkGA2g/exec", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+    // Load master names from Google Sheet
+    fetch(scriptURL)
+      .then(res => res.json())
+      .then(masterNames => {
+        const container = document.getElementById("masterList");
+        container.innerHTML = ""; // Clear "loading..."
+        masterNames.forEach(name => {
+          const label = document.createElement("label");
+          label.innerHTML = `<input type="checkbox" name="master" value="${name}"> ${name}`;
+          container.appendChild(label);
         });
+      })
+      .catch(err => {
+        document.getElementById("masterList").innerHTML = "<i>Failed to load master list</i>";
+        console.error("Error loading master list:", err);
+      });
 
-        const text = await res.text();
-        document.getElementById("responseMessage").innerText = text;
-      } catch (err) {
-        document.getElementById("responseMessage").innerText = "Error submitting form.";
-      }
+    // Handle form submit
+    document.getElementById("attendanceForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const selected = Array.from(document.querySelectorAll("input[name='master']:checked")).map(cb => cb.value);
+      const adhoc = document.getElementById("adhoc").value;
+
+      const payload = {
+        master: selected,
+        adhoc: adhoc
+      };
+
+      document.getElementById("status").innerText = "Submitting...";
+
+      fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+        .then(res => res.text())
+        .then(text => {
+          document.getElementById("status").innerText = "✅ Attendance submitted!";
+          document.getElementById("attendanceForm").reset();
+        })
+        .catch(err => {
+          document.getElementById("status").innerText = "❌ Error submitting attendance.";
+          console.error("Submission error:", err);
+        });
     });
   </script>
 </body>
