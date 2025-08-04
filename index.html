@@ -42,7 +42,7 @@
 
       const payload = { master: selected, adhoc: adhoc };
       try {
-        const res = await fetch("YOUR_GOOGLE_APPS_SCRIPT_URL", {
+        const res = await fetch("https://script.google.com/macros/s/AKfycbxYIV-ub7AEcpUU34fFqdDEqVlKHDex0Yw_y4CSd0Sn3CusPuoLQZHD5Ysf5zAZtkGA2g/exec", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
